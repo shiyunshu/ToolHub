@@ -1,2 +1,7 @@
 toolhub/node_modules/
 toolhub/src-tauri/target/
+.git
+.git/*
+docs/*
+.claude
+.claude/*
