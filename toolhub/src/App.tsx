@@ -28,6 +28,7 @@ function App() {
     createTool,
     updateTool,
     deleteTool,
+    moveTool,
     launchTool,
     refreshCategories,
   } = useTools();
@@ -126,11 +127,13 @@ function App() {
         >
           <ToolGrid
             tools={tools}
+            categories={categories}
             loading={loading}
             categoryName={selectedCategoryName}
             onLaunch={handleLaunch}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onMove={moveTool}
           />
         </Content>
       </Layout>

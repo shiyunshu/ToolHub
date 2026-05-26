@@ -5,19 +5,26 @@ import {
   FolderOpenOutlined,
   CopyOutlined,
 } from '@ant-design/icons';
-import { ToolItem } from '../types';
+import { ToolItem, ToolCategory } from '../types';
 
 const { Text } = Typography;
 
 interface Props {
   tool: ToolItem;
+  categories: ToolCategory[];
   onLaunch: (tool: ToolItem) => void;
   onEdit: (tool: ToolItem) => void;
   onDelete: (id: string) => void;
+  onMove: (toolId: string, categoryId: string) => Promise<void>;
 }
 
-export default function ToolCard({ tool, onLaunch, onEdit, onDelete }: Props) {
+export default function ToolCard({ tool, categories, onLaunch, onEdit, onDelete, onMove }: Props) {
   const handleContextMenu = (key: string) => {
+    if (key.startsWith('move-')) {
+      const categoryId = key.replace('move-', '');
+      onMove(tool.id, categoryId);
+      return;
+    }
     switch (key) {
       case 'launch':
         onLaunch(tool);
@@ -39,6 +46,17 @@ export default function ToolCard({ tool, onLaunch, onEdit, onDelete }: Props) {
   const menuItems = [
     { key: 'launch', label: '启动', icon: <FolderOpenOutlined /> },
     { key: 'edit', label: '编辑', icon: <EditOutlined /> },
+    {
+      key: 'move-to',
+      label: '移动到',
+      icon: <FolderOpenOutlined />,
+      children: categories
+        .filter((c) => c.id !== tool.category_id)
+        .map((cat) => ({
+          key: `move-${cat.id}`,
+          label: cat.name,
+        })),
+    },
     { key: 'copy-path', label: '复制路径', icon: <CopyOutlined /> },
     { key: 'delete', label: '删除', icon: <DeleteOutlined />, danger: true },
   ];

@@ -115,6 +115,21 @@ export function useTools() {
     await fetchTools(selectedCategoryId);
   };
 
+  const moveTool = async (toolId: string, newCategoryId: string) => {
+    const tool = tools.find((t) => t.id === toolId);
+    if (!tool) return;
+    await invoke('update_tool', {
+      id: toolId,
+      name: tool.name,
+      path: tool.path,
+      categoryId: newCategoryId,
+      iconPath: tool.icon_path,
+      remarks: tool.remarks || null,
+      tags: tool.tags || null,
+    });
+    await fetchTools(selectedCategoryId);
+  };
+
   const launchTool = async (item: ToolItem) => {
     await invoke('launch_tool', { path: item.path });
     await invoke('increment_launch_count', { id: item.id });
@@ -137,6 +152,7 @@ export function useTools() {
     createTool,
     updateTool,
     deleteTool,
+    moveTool,
     launchTool,
     searchTools,
     refreshCategories: () => { refreshCategories(); fetchRecentTools(); },

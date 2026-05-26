@@ -1,25 +1,29 @@
 import { Row, Col, Empty, Spin, Typography } from 'antd';
 import ToolCard from './ToolCard';
-import { ToolItem } from '../types';
+import { ToolItem, ToolCategory } from '../types';
 
 const { Title, Text } = Typography;
 
 interface Props {
   tools: ToolItem[];
+  categories: ToolCategory[];
   loading: boolean;
   categoryName: string;
   onLaunch: (tool: ToolItem) => void;
   onEdit: (tool: ToolItem) => void;
   onDelete: (id: string) => void;
+  onMove: (toolId: string, categoryId: string) => Promise<void>;
 }
 
 export default function ToolGrid({
   tools,
+  categories,
   loading,
   categoryName,
   onLaunch,
   onEdit,
   onDelete,
+  onMove,
 }: Props) {
   return (
     <div style={{ padding: 16 }}>
@@ -38,9 +42,11 @@ export default function ToolGrid({
               <Col key={tool.id}>
                 <ToolCard
                   tool={tool}
+                  categories={categories}
                   onLaunch={onLaunch}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  onMove={onMove}
                 />
               </Col>
             ))}
