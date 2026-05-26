@@ -1,50 +1,143 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useState } from 'react';
+import { Layout, message } from 'antd';
+import { useTools } from './hooks/useTools';
+import CategoryTree from './components/CategoryTree';
+import ToolGrid from './components/ToolGrid';
+import SearchBar from './components/SearchBar';
+import ToolDialog from './components/ToolDialog';
+import RecentTools from './components/RecentTools';
+import ImportExportBar from './components/ImportExportBar';
+import { ToolItem, ToolFormValues } from './types';
+import './App.css';
+
+const { Header, Sider, Content, Footer } = Layout;
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const {
+    categories,
+    tools,
+    recentTools,
+    selectedCategoryId,
+    searchQuery,
+    loading,
+    setSelectedCategoryId,
+    setSearchQuery,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    createTool,
+    updateTool,
+    deleteTool,
+    launchTool,
+    refreshCategories,
+  } = useTools();
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTool, setEditingTool] = useState<ToolItem | null>(null);
+
+  const selectedCategoryName =
+    selectedCategoryId
+      ? categories.find((c) => c.id === selectedCategoryId)?.name || ''
+      : '全部工具';
+
+  const handleAdd = () => {
+    setEditingTool(null);
+    setDialogOpen(true);
+  };
+
+  const handleEdit = (tool: ToolItem) => {
+    setEditingTool(tool);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteTool(id);
+    message.success('工具已删除');
+  };
+
+  const handleSave = async (values: ToolFormValues) => {
+    if (editingTool) {
+      await updateTool(editingTool.id, values);
+      message.success('工具已更新');
+    } else {
+      await createTool(values);
+      message.success('工具已添加');
+    }
+    setDialogOpen(false);
+  };
+
+  const handleLaunch = async (tool: ToolItem) => {
+    try {
+      await launchTool(tool);
+    } catch (e) {
+      message.error(`启动失败: ${e}`);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    message.info('拖放添加将在 V2 中支持');
+  };
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+    <Layout style={{ height: '100vh' }}>
+      <Header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '0 16px' }}>
+        <div style={{ color: '#fff', fontSize: 18, fontWeight: 'bold', marginRight: 24 }}>
+          ToolHub
+        </div>
+        <SearchBar value={searchQuery} onChange={setSearchQuery} />
+        <div style={{ marginLeft: 'auto' }}>
+          <ImportExportBar onImported={refreshCategories} />
+        </div>
+        <div>
+          <button onClick={handleAdd} style={{ color: '#fff', background: '#1677ff', border: 'none', borderRadius: 4, padding: '4px 12px', cursor: 'pointer' }}>
+            + 添加
+          </button>
+        </div>
+      </Header>
+      <Layout>
+        <Sider width={220} style={{ background: '#fff', borderRight: '1px solid #f0f0f0', overflow: 'auto' }}>
+          <CategoryTree
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            onSelect={setSelectedCategoryId}
+            onCreate={createCategory}
+            onUpdate={updateCategory}
+            onDelete={deleteCategory}
+          />
+        </Sider>
+        <Content
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          style={{ overflow: 'auto' }}
+        >
+          <ToolGrid
+            tools={tools}
+            loading={loading}
+            categoryName={selectedCategoryName}
+            onLaunch={handleLaunch}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </Content>
+      </Layout>
+      <Footer style={{ padding: 0 }}>
+        <RecentTools tools={recentTools} onLaunch={handleLaunch} />
+      </Footer>
+      <ToolDialog
+        open={dialogOpen}
+        editingTool={editingTool}
+        categories={categories}
+        onSave={handleSave}
+        onCancel={() => setDialogOpen(false)}
+      />
+    </Layout>
   );
 }
 
