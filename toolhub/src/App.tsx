@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Layout, Modal, message } from 'antd';
+import { ConfigProvider, theme, Layout, Modal, message } from 'antd';
 import { useTools } from './hooks/useTools';
 import CategoryTree from './components/CategoryTree';
 import ToolGrid from './components/ToolGrid';
@@ -7,6 +7,7 @@ import SearchBar from './components/SearchBar';
 import ToolDialog from './components/ToolDialog';
 import RecentTools from './components/RecentTools';
 import ImportExportBar from './components/ImportExportBar';
+import ThemeToggle from './components/ThemeToggle';
 import { ToolItem, ToolFormValues } from './types';
 import './App.css';
 
@@ -36,6 +37,13 @@ function App() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<ToolItem | null>(null);
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
+  const [isDark, setIsDark] = useState(() => localStorage.getItem('toolhub-theme') === 'dark');
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    localStorage.setItem('toolhub-theme', next ? 'dark' : 'light');
+  };
 
   const selectedCategoryName =
     selectedCategoryId
@@ -95,12 +103,16 @@ function App() {
   };
 
   return (
+    <ConfigProvider
+      theme={{ algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm }}
+    >
     <Layout style={{ height: '100vh' }}>
       <Header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '0 16px' }}>
-        <div style={{ color: '#fff', fontSize: 18, fontWeight: 'bold', marginRight: 24 }}>
+        <div style={{ color: isDark ? '#fff' : '#000', fontSize: 18, fontWeight: 'bold', marginRight: 24 }}>
           ToolHub
         </div>
         <SearchBar value={searchQuery} onChange={setSearchQuery} />
+        <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
         <div style={{ marginLeft: 'auto' }}>
           <ImportExportBar onImported={refreshCategories} />
         </div>
@@ -151,6 +163,7 @@ function App() {
         onCancel={() => setDialogOpen(false)}
       />
     </Layout>
+    </ConfigProvider>
   );
 }
 
