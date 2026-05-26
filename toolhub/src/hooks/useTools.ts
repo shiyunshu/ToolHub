@@ -1,3 +1,4 @@
+import { message } from 'antd';
 import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { ToolCategory, ToolItem, ToolFormValues, CategoryFormValues } from '../types';
@@ -118,16 +119,20 @@ export function useTools() {
   const moveTool = async (toolId: string, newCategoryId: string) => {
     const tool = tools.find((t) => t.id === toolId);
     if (!tool) return;
-    await invoke('update_tool', {
-      id: toolId,
-      name: tool.name,
-      path: tool.path,
-      categoryId: newCategoryId,
-      iconPath: tool.icon_path,
-      remarks: tool.remarks || null,
-      tags: tool.tags || null,
-    });
-    await fetchTools(selectedCategoryId);
+    try {
+      await invoke('update_tool', {
+        id: toolId,
+        name: tool.name,
+        path: tool.path,
+        categoryId: newCategoryId,
+        iconPath: tool.icon_path,
+        remarks: tool.remarks || null,
+        tags: tool.tags || null,
+      });
+      await fetchTools(selectedCategoryId);
+    } catch (e) {
+      message.error('移动失败: ' + e);
+    }
   };
 
   const launchTool = async (item: ToolItem) => {

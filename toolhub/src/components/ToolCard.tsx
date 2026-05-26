@@ -4,6 +4,7 @@ import {
   EditOutlined,
   FolderOpenOutlined,
   CopyOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import { ToolItem, ToolCategory } from '../types';
 
@@ -49,7 +50,7 @@ export default function ToolCard({ tool, categories, onLaunch, onEdit, onDelete,
     {
       key: 'move-to',
       label: '移动到',
-      icon: <FolderOpenOutlined />,
+      icon: <SwapOutlined />,
       children: categories
         .filter((c) => c.id !== tool.category_id)
         .map((cat) => ({
