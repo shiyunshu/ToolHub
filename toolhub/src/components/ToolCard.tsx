@@ -34,7 +34,7 @@ export default function ToolCard({ tool, categories, selected, showCheckbox, onS
         setIconDataUrl(`data:image/png;base64,${base64}`);
       }
     }).catch(() => {
-      // ignore - will show fallback icon
+      setIconDataUrl(null);
     });
     return () => { cancelled = true; };
   }, [tool.path]);

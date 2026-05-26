@@ -2,7 +2,7 @@ use std::io::Cursor;
 
 use base64::Engine;
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{BOOL, HWND, TRUE};
+use windows::Win32::Foundation::{FALSE, HWND};
 use windows::Win32::Graphics::Gdi::{
     CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, DeleteObject, GetDIBits,
     GetObjectW, SelectObject, BITMAP, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS,
@@ -10,7 +10,7 @@ use windows::Win32::Graphics::Gdi::{
 };
 use windows::Win32::UI::Shell::{SHGetFileInfoW, SHGFI_ICON, SHGFI_LARGEICON, SHFILEINFOW};
 use windows::Win32::UI::WindowsAndMessaging::{
-    DestroyIcon, DrawIconEx, GetIconInfo, ICONINFO, DI_NORMAL,
+    DestroyIcon, DrawIconEx, GetIconInfo, HICON, ICONINFO, DI_NORMAL,
 };
 
 pub fn extract_icon_base64(exe_path: &str) -> Option<String> {
@@ -49,7 +49,7 @@ pub fn extract_icon_base64(exe_path: &str) -> Option<String> {
     Some(base64::engine::general_purpose::STANDARD.encode(&png_bytes))
 }
 
-fn icon_to_png_bytes(hicon: windows::Win32::UI::WindowsAndMessaging::HICON) -> Option<Vec<u8>> {
+fn icon_to_png_bytes(hicon: HICON) -> Option<Vec<u8>> {
     unsafe {
         // Get desktop DC
         let screen_dc = GetDC(HWND(std::ptr::null_mut()));
@@ -95,7 +95,7 @@ fn icon_to_png_bytes(hicon: windows::Win32::UI::WindowsAndMessaging::HICON) -> O
             return None;
         }
 
-        SelectObject(mem_dc, hbmp);
+        let old_bmp = SelectObject(mem_dc, hbmp);
 
         // Draw the icon onto the bitmap
         DrawIconEx(
@@ -149,17 +149,24 @@ fn icon_to_png_bytes(hicon: windows::Win32::UI::WindowsAndMessaging::HICON) -> O
             DIB_RGB_COLORS,
         );
 
-        // Cleanup GDI objects
+        // GetDIBits returns the number of scan lines; 0 means failure
+        if dib_result == 0 {
+            SelectObject(mem_dc, old_bmp);
+            DeleteObject(hbmp);
+            DeleteObject(icon_info.hbmColor);
+            DeleteObject(icon_info.hbmMask);
+            DeleteDC(mem_dc);
+            let _ = ReleaseDC(HWND(std::ptr::null_mut()), screen_dc);
+            return None;
+        }
+
+        // Restore old bitmap before cleanup
+        SelectObject(mem_dc, old_bmp);
         DeleteObject(hbmp);
         DeleteObject(icon_info.hbmColor);
         DeleteObject(icon_info.hbmMask);
         DeleteDC(mem_dc);
         let _ = ReleaseDC(HWND(std::ptr::null_mut()), screen_dc);
-
-        // GetDIBits returns the number of scan lines; 0 means failure
-        if dib_result == 0 {
-            return None;
-        }
 
         // Convert BGRA pixel data to RGBA
         let mut rgba_pixels: Vec<u8> = Vec::with_capacity((width * height * 4) as usize);
