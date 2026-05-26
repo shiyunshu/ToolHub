@@ -5,3 +5,4 @@ toolhub/src-tauri/target/
 docs/*
 .claude
 .claude/*
+.worktrees/
