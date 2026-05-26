@@ -8,6 +8,7 @@ interface Props {
   open: boolean;
   editingTool: ToolItem | null;
   categories: ToolCategory[];
+  initialValues?: Partial<ToolFormValues>;
   onSave: (values: ToolFormValues) => Promise<void>;
   onCancel: () => void;
 }
@@ -16,6 +17,7 @@ export default function ToolDialog({
   open,
   editingTool,
   categories,
+  initialValues,
   onSave,
   onCancel,
 }: Props) {
@@ -31,11 +33,13 @@ export default function ToolDialog({
           remarks: editingTool.remarks || undefined,
           tags: editingTool.tags || undefined,
         });
+      } else if (initialValues) {
+        form.setFieldsValue(initialValues);
       } else {
         form.resetFields();
       }
     }
-  }, [open, editingTool, form]);
+  }, [open, editingTool, initialValues, form]);
 
   const buildCategoryOptions = (cats: ToolCategory[]): { label: string; value: string }[] => {
     return [...cats]

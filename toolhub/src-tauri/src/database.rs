@@ -246,6 +246,47 @@ impl Database {
         Ok(())
     }
 
+    pub fn bulk_import(&self, categories: &[Category], tools: &[Tool]) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute_batch("BEGIN")?;
+        if let Err(e) = self._bulk_import_execute(&conn, categories, tools) {
+            conn.execute_batch("ROLLBACK").ok();
+            return Err(e);
+        }
+        conn.execute_batch("COMMIT")?;
+        Ok(())
+    }
+
+    fn _bulk_import_execute(
+        &self,
+        conn: &Connection,
+        categories: &[Category],
+        tools: &[Tool],
+    ) -> Result<()> {
+        for cat in categories {
+            conn.execute(
+                "INSERT INTO categories (id, name, parent_id) VALUES (?1, ?2, ?3)",
+                params![cat.id, cat.name, cat.parent_id],
+            )?;
+        }
+        for tool in tools {
+            conn.execute(
+                "INSERT INTO tools (id, name, path, category_id, icon_path, remarks, tags)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                params![
+                    tool.id,
+                    tool.name,
+                    tool.path,
+                    tool.category_id,
+                    tool.icon_path,
+                    tool.remarks,
+                    tool.tags,
+                ],
+            )?;
+        }
+        Ok(())
+    }
+
     pub fn get_recent_tools(&self, limit: i32) -> Result<Vec<Tool>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(

@@ -32,3 +32,9 @@ export interface CategoryFormValues {
   name: string;
   parent_id: string | null;
 }
+
+export interface DroppedFile {
+  path: string;
+  name: string;
+  extension: string;
+}

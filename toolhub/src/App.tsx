@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ConfigProvider, theme, Layout, Modal, message } from 'antd';
+import { invoke } from '@tauri-apps/api/core';
 import { useTools } from './hooks/useTools';
 import CategoryTree from './components/CategoryTree';
 import ToolGrid from './components/ToolGrid';
@@ -8,7 +9,7 @@ import ToolDialog from './components/ToolDialog';
 import RecentTools from './components/RecentTools';
 import ImportExportBar from './components/ImportExportBar';
 import ThemeToggle from './components/ThemeToggle';
-import { ToolItem, ToolFormValues } from './types';
+import { ToolItem, ToolFormValues, DroppedFile } from './types';
 import './App.css';
 
 const { Header, Sider, Content, Footer } = Layout;
@@ -39,6 +40,7 @@ function App() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<ToolItem | null>(null);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('toolhub-theme') === 'dark');
+  const [initialFormValues, setInitialFormValues] = useState<Partial<ToolFormValues> | undefined>(undefined);
 
   const toggleTheme = () => {
     const next = !isDark;
@@ -53,6 +55,7 @@ function App() {
 
   const handleAdd = () => {
     setEditingTool(null);
+    setInitialFormValues(undefined);
     setDialogOpen(true);
   };
 
@@ -82,6 +85,7 @@ function App() {
       message.success('工具已添加');
     }
     setDialogOpen(false);
+    setInitialFormValues(undefined);
   };
 
   const handleLaunch = async (tool: ToolItem) => {
@@ -97,10 +101,26 @@ function App() {
     e.stopPropagation();
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    message.info('拖放添加将在 V2 中支持');
+    const rawPath = e.dataTransfer.files[0]?.path;
+    if (!rawPath) {
+      message.warning('无法读取拖入的文件路径');
+      return;
+    }
+    try {
+      const result = await invoke<DroppedFile | null>('parse_dropped_file', { path: rawPath });
+      if (!result) {
+        message.warning('文件不存在或无法访问');
+        return;
+      }
+      setEditingTool(null);
+      setInitialFormValues({ name: result.name, path: result.path });
+      setDialogOpen(true);
+    } catch (err) {
+      message.error(`解析文件失败: ${err}`);
+    }
   };
 
   return (
@@ -160,8 +180,9 @@ function App() {
         open={dialogOpen}
         editingTool={editingTool}
         categories={categories}
+        initialValues={initialFormValues}
         onSave={handleSave}
-        onCancel={() => setDialogOpen(false)}
+        onCancel={() => { setDialogOpen(false); setInitialFormValues(undefined); }}
       />
     </Layout>
     </ConfigProvider>

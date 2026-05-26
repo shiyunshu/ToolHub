@@ -16,17 +16,8 @@ pub fn export_to_json(db: &Database) -> Result<String, String> {
 
 pub fn import_from_json(db: &Database, json: &str) -> Result<(), String> {
     let data: ExportData = serde_json::from_str(json).map_err(|e| e.to_string())?;
-    for cat in &data.categories {
-        db.create_category(&cat.id, &cat.name, cat.parent_id.as_deref())
-            .map_err(|e| e.to_string())?;
-    }
-    for tool in &data.tools {
-        db.create_tool(
-            &tool.id, &tool.name, &tool.path, &tool.category_id,
-            tool.icon_path.as_deref(), tool.remarks.as_deref(), tool.tags.as_deref(),
-        ).map_err(|e| e.to_string())?;
-    }
-    Ok(())
+    db.bulk_import(&data.categories, &data.tools)
+        .map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
