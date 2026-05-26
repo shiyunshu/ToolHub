@@ -1,5 +1,5 @@
 use rusqlite::{Connection, Result, params};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -7,7 +7,7 @@ pub struct Database {
     conn: Mutex<Connection>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Category {
     pub id: String,
     pub name: String,
@@ -16,7 +16,7 @@ pub struct Category {
     pub created_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Tool {
     pub id: String,
     pub name: String,
