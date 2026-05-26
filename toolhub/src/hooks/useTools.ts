@@ -118,6 +118,7 @@ export function useTools() {
   const launchTool = async (item: ToolItem) => {
     await invoke('launch_tool', { path: item.path });
     await invoke('increment_launch_count', { id: item.id });
+    await fetchTools(selectedCategoryId);
     await fetchRecentTools();
   };
 

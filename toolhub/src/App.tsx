@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Layout, message } from 'antd';
+import { Layout, Modal, message } from 'antd';
 import { useTools } from './hooks/useTools';
 import CategoryTree from './components/CategoryTree';
 import ToolGrid from './components/ToolGrid';
@@ -50,9 +50,16 @@ function App() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteTool(id);
-    message.success('工具已删除');
+  const handleDelete = (id: string) => {
+    const tool = tools.find((t) => t.id === id);
+    Modal.confirm({
+      title: `确认删除工具"${tool?.name}"？`,
+      content: '此操作不可撤销。',
+      onOk: async () => {
+        await deleteTool(id);
+        message.success('工具已删除');
+      },
+    });
   };
 
   const handleSave = async (values: ToolFormValues) => {
