@@ -63,11 +63,21 @@ export default function CategoryTree({
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingCat, setEditingCat] = useState<ToolCategory | null>(null);
+  const [parentCategoryId, setParentCategoryId] = useState<string | null>(null);
 
   const treeData = buildTreeData(categories);
 
   const handleRightClick = (cat: ToolCategory) => {
     const items = [
+      {
+        key: 'add-child',
+        label: '新建子分类',
+        icon: <FolderAddOutlined />,
+        onClick: () => {
+          setParentCategoryId(cat.id);
+          setAddModalOpen(true);
+        },
+      },
       {
         key: 'edit',
         label: '重命名',
@@ -108,7 +118,7 @@ export default function CategoryTree({
         type="dashed"
         size="small"
         icon={<FolderAddOutlined />}
-        onClick={() => setAddModalOpen(true)}
+        onClick={() => { setParentCategoryId(null); setAddModalOpen(true); }}
         style={{ marginBottom: 8, width: '100%' }}
       >
         新建分类
@@ -127,7 +137,7 @@ export default function CategoryTree({
       <Modal
         title="新建分类"
         open={addModalOpen}
-        onCancel={() => setAddModalOpen(false)}
+        onCancel={() => { setAddModalOpen(false); setParentCategoryId(null); }}
         footer={null}
       >
         <Input.Search
@@ -135,11 +145,10 @@ export default function CategoryTree({
           enterButton="创建"
           onSearch={async (value) => {
             if (!value.trim()) return;
-            const parentId = selectedCategoryId && selectedCategoryId !== '__all__'
-              ? selectedCategoryId
-              : null;
+            const parentId = parentCategoryId || (selectedCategoryId && selectedCategoryId !== '__all__' ? selectedCategoryId : null);
             await onCreate({ name: value.trim(), parent_id: parentId });
             setAddModalOpen(false);
+            setParentCategoryId(null);
           }}
         />
       </Modal>
