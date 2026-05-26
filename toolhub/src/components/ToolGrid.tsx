@@ -9,10 +9,12 @@ interface Props {
   categories: ToolCategory[];
   loading: boolean;
   categoryName: string;
+  selectedToolId: string | null;
   onLaunch: (tool: ToolItem) => void;
   onEdit: (tool: ToolItem) => void;
   onDelete: (id: string) => void;
   onMove: (toolId: string, categoryId: string) => Promise<void>;
+  onSelectTool: (id: string | null) => void;
 }
 
 export default function ToolGrid({
@@ -20,10 +22,12 @@ export default function ToolGrid({
   categories,
   loading,
   categoryName,
+  selectedToolId,
   onLaunch,
   onEdit,
   onDelete,
   onMove,
+  onSelectTool,
 }: Props) {
   return (
     <div style={{ padding: 16 }}>
@@ -43,10 +47,12 @@ export default function ToolGrid({
                 <ToolCard
                   tool={tool}
                   categories={categories}
+                  selected={tool.id === selectedToolId}
                   onLaunch={onLaunch}
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onMove={onMove}
+                  onSelect={() => onSelectTool(selectedToolId === tool.id ? null : tool.id)}
                 />
               </Col>
             ))}

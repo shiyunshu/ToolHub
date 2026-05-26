@@ -35,6 +35,7 @@ function App() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<ToolItem | null>(null);
+  const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
 
   const selectedCategoryName =
     selectedCategoryId
@@ -130,10 +131,12 @@ function App() {
             categories={categories}
             loading={loading}
             categoryName={selectedCategoryName}
+            selectedToolId={selectedToolId}
             onLaunch={handleLaunch}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onMove={moveTool}
+            onSelectTool={setSelectedToolId}
           />
         </Content>
       </Layout>

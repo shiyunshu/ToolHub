@@ -13,13 +13,15 @@ const { Text } = Typography;
 interface Props {
   tool: ToolItem;
   categories: ToolCategory[];
+  selected?: boolean;
+  onSelect?: () => void;
   onLaunch: (tool: ToolItem) => void;
   onEdit: (tool: ToolItem) => void;
   onDelete: (id: string) => void;
   onMove: (toolId: string, categoryId: string) => Promise<void>;
 }
 
-export default function ToolCard({ tool, categories, onLaunch, onEdit, onDelete, onMove }: Props) {
+export default function ToolCard({ tool, categories, selected, onSelect, onLaunch, onEdit, onDelete, onMove }: Props) {
   const handleContextMenu = (key: string) => {
     if (key.startsWith('move-')) {
       const categoryId = key.replace('move-', '');
@@ -67,8 +69,15 @@ export default function ToolCard({ tool, categories, onLaunch, onEdit, onDelete,
       <Card
         hoverable
         size="small"
-        style={{ width: 140, textAlign: 'center', cursor: 'pointer' }}
+        style={{
+          width: 140,
+          textAlign: 'center',
+          cursor: 'pointer',
+          borderColor: selected ? '#1677ff' : undefined,
+          boxShadow: selected ? '0 0 0 2px rgba(22,119,255,0.2)' : undefined,
+        }}
         onDoubleClick={() => onLaunch(tool)}
+        onClick={() => onSelect?.()}
         styles={{ body: { padding: 12 } }}
       >
         <div style={{ fontSize: 32, marginBottom: 8 }}>
