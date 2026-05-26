@@ -1,4 +1,8 @@
 mod database;
+mod launcher;
+mod icon_extractor;
+mod drag_drop;
+mod import_export;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
