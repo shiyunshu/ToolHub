@@ -157,6 +157,11 @@ fn read_text_file(path: String) -> Result<String, String> {
     std::fs::read_to_string(&path).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn extract_icon(path: String) -> Result<Option<String>, String> {
+    Ok(icon_extractor::extract_icon_base64(&path))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -189,6 +194,7 @@ pub fn run() {
             import_data,
             write_text_file,
             read_text_file,
+            extract_icon,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

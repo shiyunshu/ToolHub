@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Card, Dropdown, Typography, message, Checkbox } from 'antd';
 import {
   DeleteOutlined,
@@ -6,6 +7,7 @@ import {
   CopyOutlined,
   SwapOutlined,
 } from '@ant-design/icons';
+import { invoke } from '@tauri-apps/api/core';
 import { ToolItem, ToolCategory } from '../types';
 
 const { Text } = Typography;
@@ -23,6 +25,20 @@ interface Props {
 }
 
 export default function ToolCard({ tool, categories, selected, showCheckbox, onSelect, onLaunch, onEdit, onDelete, onMove }: Props) {
+  const [iconDataUrl, setIconDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    invoke<string | null>('extract_icon', { path: tool.path }).then((base64) => {
+      if (!cancelled && base64) {
+        setIconDataUrl(`data:image/png;base64,${base64}`);
+      }
+    }).catch(() => {
+      // ignore - will show fallback icon
+    });
+    return () => { cancelled = true; };
+  }, [tool.path]);
+
   const handleContextMenu = (key: string) => {
     if (key.startsWith('move-')) {
       const categoryId = key.replace('move-', '');
@@ -87,8 +103,12 @@ export default function ToolCard({ tool, categories, selected, showCheckbox, onS
             <Checkbox checked={selected} onChange={() => onSelect?.()} />
           </div>
         )}
-        <div style={{ fontSize: 32, marginBottom: 8 }}>
-          <FolderOpenOutlined />
+        <div style={{ fontSize: 32, marginBottom: 8, display: 'flex', justifyContent: 'center', alignItems: 'center', height: 32 }}>
+          {iconDataUrl ? (
+            <img src={iconDataUrl} style={{ width: 32, height: 32 }} alt={tool.name} />
+          ) : (
+            <FolderOpenOutlined />
+          )}
         </div>
         <Text ellipsis style={{ maxWidth: 116, display: 'block' }}>
           {tool.name}
