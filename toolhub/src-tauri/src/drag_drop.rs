@@ -30,11 +30,16 @@ mod tests {
 
     #[test]
     fn test_parse_exe_path() {
-        let result = parse_dropped_file("C:\\Windows\\System32\\notepad.exe");
+        let dir = std::env::temp_dir().join("toolhub_drag_test");
+        std::fs::create_dir_all(&dir).unwrap();
+        let file_path = dir.join("notepad.exe");
+        std::fs::File::create(&file_path).unwrap();
+        let result = parse_dropped_file(file_path.to_str().unwrap());
         assert!(result.is_some());
         let f = result.unwrap();
         assert_eq!(f.name, "notepad");
         assert_eq!(f.extension, "exe");
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]
