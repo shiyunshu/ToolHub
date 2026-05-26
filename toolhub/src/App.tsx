@@ -109,7 +109,7 @@ function App() {
     >
     <Layout style={{ height: '100vh' }}>
       <Header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '0 16px' }}>
-        <div style={{ color: isDark ? '#fff' : '#000', fontSize: 18, fontWeight: 'bold', marginRight: 24 }}>
+        <div style={{ color: '#fff', fontSize: 18, fontWeight: 'bold', marginRight: 24 }}>
           ToolHub
         </div>
         <SearchBar value={searchQuery} onChange={setSearchQuery} />

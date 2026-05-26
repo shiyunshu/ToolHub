@@ -44,9 +44,17 @@ export default function ToolGrid({
   };
 
   const handleBatchMove = async () => {
-    if (!targetCategoryId || selectedIds.size === 0) return;
-    await onBatchMove(Array.from(selectedIds), targetCategoryId);
-    message.success(`已移动 ${selectedIds.size} 个工具`);
+    if (!targetCategoryId) {
+      message.warning('请选择目标分类');
+      return;
+    }
+    if (selectedIds.size === 0) return;
+    try {
+      await onBatchMove(Array.from(selectedIds), targetCategoryId);
+      message.success(`已移动 ${selectedIds.size} 个工具`);
+    } catch {
+      message.error('批量移动失败');
+    }
     setSelectedIds(new Set());
     setMoveModalOpen(false);
   };
@@ -56,8 +64,12 @@ export default function ToolGrid({
       title: `确认删除选中的 ${selectedIds.size} 个工具？`,
       content: '此操作不可撤销。',
       onOk: async () => {
-        await onBatchDelete(Array.from(selectedIds));
-        message.success('已删除');
+        try {
+          await onBatchDelete(Array.from(selectedIds));
+          message.success('已删除');
+        } catch {
+          message.error('批量删除失败');
+        }
         setSelectedIds(new Set());
       },
     });

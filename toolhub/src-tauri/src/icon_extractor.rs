@@ -1,3 +1,4 @@
+use image::{ImageBuffer, Rgba};
 use std::io::Cursor;
 
 use base64::Engine;
@@ -185,7 +186,6 @@ fn icon_to_png_bytes(hicon: HICON) -> Option<Vec<u8>> {
         }
 
         // Encode as PNG using the image crate
-        use image::{ImageBuffer, Rgba};
         let img = ImageBuffer::<Rgba<u8>, Vec<u8>>::from_raw(
             width as u32,
             height as u32,

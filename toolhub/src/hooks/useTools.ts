@@ -143,20 +143,36 @@ export function useTools() {
   };
 
   const batchMoveTools = async (toolIds: string[], targetCategoryId: string) => {
+    const failed: string[] = [];
     for (const id of toolIds) {
       const tool = tools.find((t) => t.id === id);
-      if (!tool) continue;
-      await invoke('update_tool', {
-        id, name: tool.name, path: tool.path, categoryId: targetCategoryId,
-        iconPath: tool.icon_path, remarks: tool.remarks || null, tags: tool.tags || null,
-      });
+      if (!tool) { failed.push(id); continue; }
+      try {
+        await invoke('update_tool', {
+          id, name: tool.name, path: tool.path, categoryId: targetCategoryId,
+          iconPath: tool.icon_path, remarks: tool.remarks || null, tags: tool.tags || null,
+        });
+      } catch {
+        failed.push(tool.name);
+      }
+    }
+    if (failed.length > 0) {
+      message.warning(`移动失败 ${failed.length} 个工具`);
     }
     await fetchTools(selectedCategoryId);
   };
 
   const batchDeleteTools = async (toolIds: string[]) => {
+    const failed: string[] = [];
     for (const id of toolIds) {
-      await invoke('delete_tool', { id });
+      try {
+        await invoke('delete_tool', { id });
+      } catch {
+        failed.push(id);
+      }
+    }
+    if (failed.length > 0) {
+      message.warning(`删除失败 ${failed.length} 个工具`);
     }
     await fetchTools(selectedCategoryId);
   };
