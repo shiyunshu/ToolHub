@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
-import { Modal, Form, Input, Select } from 'antd';
+import { Modal, Form, Input, Select, Button, Space } from 'antd';
+import { FolderOpenOutlined } from '@ant-design/icons';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { ToolItem, ToolCategory, ToolFormValues } from '../types';
 
 interface Props {
@@ -64,7 +66,23 @@ export default function ToolDialog({
           <Input placeholder="如：Visual Studio Code" />
         </Form.Item>
         <Form.Item name="path" label="执行路径" rules={[{ required: true, message: '请选择工具路径' }]}>
-          <Input placeholder="如：D:\\tools\\Code\\Code.exe" />
+          <Space.Compact style={{ width: '100%' }}>
+            <Input placeholder="如：D:\\tools\\Code\\Code.exe" />
+            <Button
+              icon={<FolderOpenOutlined />}
+              onClick={async () => {
+                const selected = await openDialog({
+                  filters: [{ name: '可执行文件', extensions: ['exe', 'lnk', 'bat', 'cmd'] }],
+                  multiple: false,
+                });
+                if (selected) {
+                  form.setFieldValue('path', selected as string);
+                }
+              }}
+            >
+              浏览
+            </Button>
+          </Space.Compact>
         </Form.Item>
         <Form.Item name="category_id" label="所属分类" rules={[{ required: true, message: '请选择分类' }]}>
           <Select placeholder="选择分类" options={buildCategoryOptions(categories)} />
