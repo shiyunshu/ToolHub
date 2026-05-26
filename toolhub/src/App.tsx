@@ -31,12 +31,13 @@ function App() {
     deleteTool,
     moveTool,
     launchTool,
+    batchMoveTools,
+    batchDeleteTools,
     refreshCategories,
   } = useTools();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<ToolItem | null>(null);
-  const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('toolhub-theme') === 'dark');
 
   const toggleTheme = () => {
@@ -143,12 +144,12 @@ function App() {
             categories={categories}
             loading={loading}
             categoryName={selectedCategoryName}
-            selectedToolId={selectedToolId}
             onLaunch={handleLaunch}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onMove={moveTool}
-            onSelectTool={setSelectedToolId}
+            onBatchMove={batchMoveTools}
+            onBatchDelete={batchDeleteTools}
           />
         </Content>
       </Layout>

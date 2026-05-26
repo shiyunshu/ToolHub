@@ -142,6 +142,25 @@ export function useTools() {
     await fetchRecentTools();
   };
 
+  const batchMoveTools = async (toolIds: string[], targetCategoryId: string) => {
+    for (const id of toolIds) {
+      const tool = tools.find((t) => t.id === id);
+      if (!tool) continue;
+      await invoke('update_tool', {
+        id, name: tool.name, path: tool.path, categoryId: targetCategoryId,
+        iconPath: tool.icon_path, remarks: tool.remarks || null, tags: tool.tags || null,
+      });
+    }
+    await fetchTools(selectedCategoryId);
+  };
+
+  const batchDeleteTools = async (toolIds: string[]) => {
+    for (const id of toolIds) {
+      await invoke('delete_tool', { id });
+    }
+    await fetchTools(selectedCategoryId);
+  };
+
   return {
     categories,
     tools,
@@ -160,6 +179,8 @@ export function useTools() {
     moveTool,
     launchTool,
     searchTools,
+    batchMoveTools,
+    batchDeleteTools,
     refreshCategories: () => { refreshCategories(); fetchRecentTools(); },
   };
 }

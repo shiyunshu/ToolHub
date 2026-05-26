@@ -1,4 +1,4 @@
-import { Card, Dropdown, Typography, message } from 'antd';
+import { Card, Dropdown, Typography, message, Checkbox } from 'antd';
 import {
   DeleteOutlined,
   EditOutlined,
@@ -14,6 +14,7 @@ interface Props {
   tool: ToolItem;
   categories: ToolCategory[];
   selected?: boolean;
+  showCheckbox?: boolean;
   onSelect?: () => void;
   onLaunch: (tool: ToolItem) => void;
   onEdit: (tool: ToolItem) => void;
@@ -21,7 +22,7 @@ interface Props {
   onMove: (toolId: string, categoryId: string) => Promise<void>;
 }
 
-export default function ToolCard({ tool, categories, selected, onSelect, onLaunch, onEdit, onDelete, onMove }: Props) {
+export default function ToolCard({ tool, categories, selected, showCheckbox, onSelect, onLaunch, onEdit, onDelete, onMove }: Props) {
   const handleContextMenu = (key: string) => {
     if (key.startsWith('move-')) {
       const categoryId = key.replace('move-', '');
@@ -73,6 +74,7 @@ export default function ToolCard({ tool, categories, selected, onSelect, onLaunc
           width: 140,
           textAlign: 'center',
           cursor: 'pointer',
+          position: 'relative',
           borderColor: selected ? '#1677ff' : undefined,
           boxShadow: selected ? '0 0 0 2px rgba(22,119,255,0.2)' : undefined,
         }}
@@ -80,6 +82,11 @@ export default function ToolCard({ tool, categories, selected, onSelect, onLaunc
         onClick={() => onSelect?.()}
         styles={{ body: { padding: 12 } }}
       >
+        {showCheckbox && (
+          <div style={{ position: 'absolute', top: 4, left: 4 }}>
+            <Checkbox checked={selected} onClick={(e) => e.stopPropagation()} />
+          </div>
+        )}
         <div style={{ fontSize: 32, marginBottom: 8 }}>
           <FolderOpenOutlined />
         </div>

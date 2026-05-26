@@ -1,4 +1,6 @@
-import { Row, Col, Empty, Spin, Typography } from 'antd';
+import { useState } from 'react';
+import { Row, Col, Empty, Spin, Typography, Space, Checkbox, Button, Modal, Select, message } from 'antd';
+import { FolderOpenOutlined, DeleteOutlined } from '@ant-design/icons';
 import ToolCard from './ToolCard';
 import { ToolItem, ToolCategory } from '../types';
 
@@ -9,12 +11,12 @@ interface Props {
   categories: ToolCategory[];
   loading: boolean;
   categoryName: string;
-  selectedToolId: string | null;
   onLaunch: (tool: ToolItem) => void;
   onEdit: (tool: ToolItem) => void;
   onDelete: (id: string) => void;
   onMove: (toolId: string, categoryId: string) => Promise<void>;
-  onSelectTool: (id: string | null) => void;
+  onBatchMove: (toolIds: string[], targetCategoryId: string) => Promise<void>;
+  onBatchDelete: (toolIds: string[]) => Promise<void>;
 }
 
 export default function ToolGrid({
@@ -22,13 +24,45 @@ export default function ToolGrid({
   categories,
   loading,
   categoryName,
-  selectedToolId,
   onLaunch,
   onEdit,
   onDelete,
   onMove,
-  onSelectTool,
+  onBatchMove,
+  onBatchDelete,
 }: Props) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [moveModalOpen, setMoveModalOpen] = useState(false);
+  const [targetCategoryId, setTargetCategoryId] = useState<string | null>(null);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === tools.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(tools.map((t) => t.id)));
+    }
+  };
+
+  const handleBatchMove = async () => {
+    if (!targetCategoryId || selectedIds.size === 0) return;
+    await onBatchMove(Array.from(selectedIds), targetCategoryId);
+    message.success(`已移动 ${selectedIds.size} 个工具`);
+    setSelectedIds(new Set());
+    setMoveModalOpen(false);
+  };
+
+  const handleBatchDelete = () => {
+    Modal.confirm({
+      title: `确认删除选中的 ${selectedIds.size} 个工具？`,
+      content: '此操作不可撤销。',
+      onOk: async () => {
+        await onBatchDelete(Array.from(selectedIds));
+        message.success('已删除');
+        setSelectedIds(new Set());
+      },
+    });
+  };
+
   return (
     <div style={{ padding: 16 }}>
       <Title level={4} style={{ marginBottom: 16 }}>
@@ -37,6 +71,29 @@ export default function ToolGrid({
           （共 {tools.length} 个）
         </Text>
       </Title>
+      {selectedIds.size > 0 && (
+        <div style={{ marginBottom: 12, padding: 8, background: '#f5f5f5', borderRadius: 4 }}>
+          <Space>
+            <Checkbox
+              checked={selectedIds.size === tools.length}
+              indeterminate={selectedIds.size > 0 && selectedIds.size < tools.length}
+              onChange={toggleSelectAll}
+            >
+              全选
+            </Checkbox>
+            <span>已选 {selectedIds.size} 项</span>
+            <Button size="small" icon={<FolderOpenOutlined />} onClick={() => setMoveModalOpen(true)}>
+              移动到
+            </Button>
+            <Button size="small" danger icon={<DeleteOutlined />} onClick={handleBatchDelete}>
+              删除
+            </Button>
+            <Button size="small" onClick={() => setSelectedIds(new Set())}>
+              取消选择
+            </Button>
+          </Space>
+        </div>
+      )}
       <Spin spinning={loading}>
         {tools.length === 0 ? (
           <Empty description="暂无工具，拖拽 exe 文件到此处添加" />
@@ -47,18 +104,36 @@ export default function ToolGrid({
                 <ToolCard
                   tool={tool}
                   categories={categories}
-                  selected={tool.id === selectedToolId}
+                  selected={selectedIds.has(tool.id)}
+                  showCheckbox={selectedIds.size > 0}
                   onLaunch={onLaunch}
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onMove={onMove}
-                  onSelect={() => onSelectTool(selectedToolId === tool.id ? null : tool.id)}
+                  onSelect={() => {
+                    const next = new Set(selectedIds);
+                    if (next.has(tool.id)) { next.delete(tool.id); } else { next.add(tool.id); }
+                    setSelectedIds(next);
+                  }}
                 />
               </Col>
             ))}
           </Row>
         )}
       </Spin>
+      <Modal
+        title="移动到分类"
+        open={moveModalOpen}
+        onOk={handleBatchMove}
+        onCancel={() => setMoveModalOpen(false)}
+      >
+        <Select
+          style={{ width: '100%' }}
+          placeholder="选择目标分类"
+          options={categories.map((c) => ({ label: c.name, value: c.id }))}
+          onChange={setTargetCategoryId}
+        />
+      </Modal>
     </div>
   );
 }
