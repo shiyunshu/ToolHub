@@ -83,8 +83,8 @@ export default function ToolCard({ tool, categories, selected, showCheckbox, onS
         styles={{ body: { padding: 12 } }}
       >
         {showCheckbox && (
-          <div style={{ position: 'absolute', top: 4, left: 4 }}>
-            <Checkbox checked={selected} onClick={(e) => e.stopPropagation()} />
+          <div style={{ position: 'absolute', top: 4, left: 4 }} onClick={(e) => e.stopPropagation()}>
+            <Checkbox checked={selected} onChange={() => onSelect?.()} />
           </div>
         )}
         <div style={{ fontSize: 32, marginBottom: 8 }}>
