@@ -6,7 +6,7 @@ mod launcher;
 
 use database::Database;
 use tauri::Manager;
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 #[tauri::command]
 fn get_categories(state: tauri::State<'_, Database>) -> Result<Vec<database::Category>, String> {
@@ -171,7 +171,7 @@ pub fn run() {
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app, shortcut, event| {
                     if event.state == ShortcutState::Pressed
-                        && shortcut.matches(Modifiers::CONTROL | Modifiers::ALT, Code::KeyT)
+                        && shortcut.to_string() == "Ctrl+Alt+T"
                     {
                         if let Some(window) = app.get_webview_window("main") {
                             let _ = window.show();
@@ -191,10 +191,7 @@ pub fn run() {
 
             // Register global shortcut
             app.global_shortcut()
-                .register(tauri_plugin_global_shortcut::Hotkey::new(
-                    Some(Modifiers::CONTROL | Modifiers::ALT),
-                    Code::KeyT,
-                ))
+                .register("Ctrl+Alt+T")
                 .ok();
 
             Ok(())

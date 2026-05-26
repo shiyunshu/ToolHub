@@ -3,11 +3,11 @@ use std::io::Cursor;
 
 use base64::Engine;
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{FALSE, HWND};
+use windows::Win32::Foundation::HWND;
 use windows::Win32::Graphics::Gdi::{
     CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, DeleteObject, GetDIBits,
     GetObjectW, SelectObject, BITMAP, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS,
-    GetDC, ReleaseDC, HBITMAP, HDC,
+    GetDC, ReleaseDC, HBITMAP,
 };
 use windows::Win32::UI::Shell::{SHGetFileInfoW, SHGFI_ICON, SHGFI_LARGEICON, SHFILEINFOW};
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -22,8 +22,8 @@ pub fn extract_icon_base64(exe_path: &str) -> Option<String> {
     let result = unsafe {
         SHGetFileInfoW(
             PCWSTR(wide.as_ptr()),
-            0,
-            &mut info,
+            windows::Win32::Storage::FileSystem::FILE_FLAGS_AND_ATTRIBUTES(0),
+            Some(&mut info),
             std::mem::size_of::<SHFILEINFOW>() as u32,
             SHGFI_ICON | SHGFI_LARGEICON,
         )
@@ -34,7 +34,7 @@ pub fn extract_icon_base64(exe_path: &str) -> Option<String> {
     }
 
     let hicon = info.hIcon;
-    if hicon.0 == 0 {
+    if hicon.0.is_null() {
         return None;
     }
 
@@ -54,18 +54,18 @@ fn icon_to_png_bytes(hicon: HICON) -> Option<Vec<u8>> {
     unsafe {
         // Get desktop DC
         let screen_dc = GetDC(HWND(std::ptr::null_mut()));
-        if screen_dc.0 == 0 {
+        if screen_dc.0.is_null() {
             return None;
         }
 
-        let mem_dc = CreateCompatibleDC(Some(screen_dc));
-        if mem_dc.0 == 0 {
+        let mem_dc = CreateCompatibleDC(screen_dc);
+        if mem_dc.0.is_null() {
             let _ = ReleaseDC(HWND(std::ptr::null_mut()), screen_dc);
             return None;
         }
 
         let mut icon_info: ICONINFO = std::mem::zeroed();
-        if GetIconInfo(hicon, &mut icon_info) == FALSE {
+        if GetIconInfo(hicon, &mut icon_info).is_err() {
             DeleteDC(mem_dc);
             let _ = ReleaseDC(HWND(std::ptr::null_mut()), screen_dc);
             return None;
@@ -88,7 +88,7 @@ fn icon_to_png_bytes(hicon: HICON) -> Option<Vec<u8>> {
 
         // Create a compatible bitmap to render the icon onto
         let hbmp = CreateCompatibleBitmap(screen_dc, width, height);
-        if hbmp.0 == 0 {
+        if hbmp.0.is_null() {
             DeleteObject(icon_info.hbmColor);
             DeleteObject(icon_info.hbmMask);
             DeleteDC(mem_dc);
@@ -98,8 +98,8 @@ fn icon_to_png_bytes(hicon: HICON) -> Option<Vec<u8>> {
 
         let old_bmp = SelectObject(mem_dc, hbmp);
 
-        // Draw the icon onto the bitmap
-        DrawIconEx(
+        // Draw the icon onto the bitmap (ignore draw errors)
+        let _ = DrawIconEx(
             mem_dc,
             0,
             0,
