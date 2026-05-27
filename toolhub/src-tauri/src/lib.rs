@@ -6,7 +6,42 @@ mod launcher;
 
 use database::Database;
 use tauri::Manager;
-use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+
+/// Prevent multiple instances using Windows named mutex.
+/// Returns true if another instance is already running (exits the current process).
+fn check_single_instance() -> bool {
+    use windows::Win32::Foundation::{ERROR_ALREADY_EXISTS, GetLastError};
+    use windows::Win32::System::Threading::CreateMutexW;
+    use windows::Win32::UI::WindowsAndMessaging::{
+        FindWindowW, SetForegroundWindow, ShowWindow, SW_RESTORE,
+    };
+    use windows::core::w;
+
+    let name = w!("Local\\ToolHub-SingleInstance-28a7c9f1");
+    unsafe {
+        // In v0.58, CreateMutexW returns Result<HANDLE, Error>
+        if let Ok(handle) = CreateMutexW(None, false, name) {
+            let err = GetLastError();
+            if err == ERROR_ALREADY_EXISTS {
+                // Bring existing window to foreground.
+                let title = w!("ToolHub");
+                if let Ok(hwnd) = FindWindowW(None, title) {
+                    if !hwnd.is_invalid() {
+                        let _ = ShowWindow(hwnd, SW_RESTORE);
+                        let _ = SetForegroundWindow(hwnd);
+                    }
+                }
+                // Drop the duplicate handle (CloseHandle via Drop impl).
+                return true;
+            } else {
+                // First instance — handle stays alive (HANDLE is Copy, no Drop).
+                let _ = handle;
+            }
+        }
+    }
+    false
+}
 
 #[tauri::command]
 fn get_categories(state: tauri::State<'_, Database>) -> Result<Vec<database::Category>, String> {
@@ -165,6 +200,10 @@ fn extract_icon(path: String) -> Result<Option<String>, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    if check_single_instance() {
+        return;
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(

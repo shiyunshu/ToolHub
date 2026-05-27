@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ConfigProvider, theme, Layout, Modal, message } from 'antd';
 import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { useTools } from './hooks/useTools';
 import CategoryTree from './components/CategoryTree';
 import ToolGrid from './components/ToolGrid';
@@ -41,6 +42,37 @@ function App() {
   const [editingTool, setEditingTool] = useState<ToolItem | null>(null);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('toolhub-theme') === 'dark');
   const [initialFormValues, setInitialFormValues] = useState<Partial<ToolFormValues> | undefined>(undefined);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Tauri 2 drag-drop: native file paths from OS file manager
+  useEffect(() => {
+    const unlisten = getCurrentWebview().onDragDropEvent((event) => {
+      if (event.payload.type === 'enter') {
+        setIsDragging(true);
+      } else if (event.payload.type === 'leave') {
+        setIsDragging(false);
+      } else if (event.payload.type === 'drop') {
+        setIsDragging(false);
+        const rawPath = event.payload.paths[0];
+        if (!rawPath) {
+          message.warning('无法读取拖入的文件路径');
+          return;
+        }
+        invoke<DroppedFile | null>('parse_dropped_file', { path: rawPath }).then((result) => {
+          if (!result) {
+            message.warning('文件不存在或无法访问');
+            return;
+          }
+          setEditingTool(null);
+          setInitialFormValues({ name: result.name, path: result.path });
+          setDialogOpen(true);
+        }).catch((err) => {
+          message.error(`解析文件失败: ${err}`);
+        });
+      }
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, []);
 
   const toggleTheme = () => {
     const next = !isDark;
@@ -55,7 +87,12 @@ function App() {
 
   const handleAdd = () => {
     setEditingTool(null);
-    setInitialFormValues(undefined);
+    // If a specific category is selected, pre-fill the category field
+    setInitialFormValues(
+      selectedCategoryId
+        ? { category_id: selectedCategoryId }
+        : undefined
+    );
     setDialogOpen(true);
   };
 
@@ -96,33 +133,6 @@ function App() {
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const rawPath = e.dataTransfer.files[0]?.path;
-    if (!rawPath) {
-      message.warning('无法读取拖入的文件路径');
-      return;
-    }
-    try {
-      const result = await invoke<DroppedFile | null>('parse_dropped_file', { path: rawPath });
-      if (!result) {
-        message.warning('文件不存在或无法访问');
-        return;
-      }
-      setEditingTool(null);
-      setInitialFormValues({ name: result.name, path: result.path });
-      setDialogOpen(true);
-    } catch (err) {
-      message.error(`解析文件失败: ${err}`);
-    }
-  };
-
   return (
     <ConfigProvider
       theme={{ algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm }}
@@ -155,9 +165,12 @@ function App() {
           />
         </Sider>
         <Content
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          style={{ overflow: 'auto' }}
+          style={{
+            overflow: 'auto',
+            transition: 'background 0.2s',
+            background: isDragging ? 'rgba(22,119,255,0.06)' : undefined,
+            border: isDragging ? '2px dashed #1677ff' : undefined,
+          }}
         >
           <ToolGrid
             tools={tools}
